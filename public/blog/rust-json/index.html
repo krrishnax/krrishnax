@@ -1,0 +1,199 @@
+<!doctype html><html lang=en><head><meta charset=UTF-8><meta content="IE=edge" http-equiv=X-UA-Compatible><meta content="text/html; charset=UTF-8" http-equiv=content-type><meta content="width=device-width,initial-scale=1,user-scalable=no" name=viewport><meta content="index, follow" name=robots><title>How to read and write JSON Data in Rust?</title><meta content="How to read and write JSON Data in Rust?" name=title><meta content=Krishna name=author><meta content="Rust structs that can be serialized to and deserialized from JSON using the `serde` crate" name=description><meta content=website property=og:type><meta content=https://krrishnax.github.io/blog/rust-json/ property=og:url><meta content=samyakt property=og:site_name><meta content="How to read and write JSON Data in Rust?" property=og:title><meta content="Rust structs that can be serialized to and deserialized from JSON using the `serde` crate" property=og:description><meta content=https://krrishnax.github.io/twitter-fire.gif property=og:image><meta content=summary_large_image property=twitter:card><meta content=https://krrishnax.github.io/blog/rust-json/ property=twitter:url><meta content="How to read and write JSON Data in Rust?" property=twitter:title><meta content="Rust structs that can be serialized to and deserialized from JSON using the `serde` crate" property=twitter:description><meta content=https://krrishnax.github.io/twitter-fire.gif property=twitter:image><link href=https://krrishnax.github.io/blog/rust-json/ rel=canonical><link rel="shortcut icon" href=https://krrishnax.github.io/twitter-fire.gif type=image/x-icon><link href=https://krrishnax.github.io/atom.xml rel=alternate title=RSS type=application/atom+xml><link href=https://krrishnax.github.io/css/style.css rel=stylesheet><script defer src=https://krrishnax.github.io/js/script.js></script><body><div class=wrapper><header><nav class=navBar><a href=/> /home/ </a><a href=/about> /about/ </a><a href=/books> /books/ </a><a href=/blog> /blog/ </a><div class=themeSwitch><button class="themeButton light" onclick="setTheme('light')" title="Light mode"><svg class="icons icons__background"><use href=https://krrishnax.github.io/icons.svg#lightMode></use></svg></button><button class="themeButton dark" onclick="setTheme('dark')" title="Dark mode"><svg class="icons icons__background"><use href=https://krrishnax.github.io/icons.svg#darkMode></use></svg></button></div></nav></header><main><div><a href=..>..</a>/<span class=metaData>rust-json</span></div><time datetime=2023-08-17>Published on: <span class=metaData>2023-08-17</span></time><address rel=author>By <span class=metaData>Krishna</span></address><h1>How to read and write JSON Data in Rust?</h1><h2>Table of contents</h2><ul><li><a href=https://krrishnax.github.io/blog/rust-json/#environment-setup>Environment Setup</a><li><a href=https://krrishnax.github.io/blog/rust-json/#folder-structure>Folder Structure</a><li><a href=https://krrishnax.github.io/blog/rust-json/#rust-file-modules>Rust file modules</a><li><a href=https://krrishnax.github.io/blog/rust-json/#write-json-in-rust>Write Json in rust</a><li><a href=https://krrishnax.github.io/blog/rust-json/#let-s-run-the-write-json-code>Let’s Run the Write Json code</a><li><a href=https://krrishnax.github.io/blog/rust-json/#write-json-in-rust-1>Write Json in rust</a><li><a href=https://krrishnax.github.io/blog/rust-json/#let-s-run-the-read-json-code>Let’s Run the Read Json code</a><li><a href=https://krrishnax.github.io/blog/rust-json/#run-both-read-and-write-json-code>Run both read and write json code</a></ul><h2 id=environment-setup>Environment Setup</h2><ul><li><strong>Rust</strong>, You can download rust from their <a href=https://www.rust-lang.org/learn/get-started rel=noopener target=_blank>website</a><li>cargo comes with rust, so you don’t have to worry about it.<li>Initialize the Project</ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>$ cargo new --bin rust-json
+</span></code></pre><ul><li><strong>serde</strong> & <strong>serde_json</strong> can be installed via</ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>$ cargo add serde -F derive
+</span><span style=color:#fdf4c1>$ cargo add serde_json
+</span></code></pre><p>|| OR ||<ul><li>open <code>Cargo.toml</code> to add <code>serde</code> and <code>serde_json</code> dependencies crate</ul><pre style=background:#282828;color:#fdf4c1aa><code><span>[dependencies]
+</span><span>serde = { version = "1.0.196", features = ["derive"] }
+</span><span>serde_json = "1.0.113"
+</span></code></pre><h2 id=folder-structure>Folder Structure</h2><p>The <code>target</code> folder will be automatically created after running <code>cargo build</code>.<pre style=background:#282828;color:#fdf4c1aa><code><span>.
+</span><span>├── src
+</span><span>│   ├── json
+</span><span>│   │     ├── mod.rs
+</span><span>│   │     ├── read_json.rs
+</span><span>│   │     └── write_json.rs
+</span><span>│   └── main.rs
+</span><span>├── .gitignore
+</span><span>├── Cargo.lock
+</span><span>└── Cargo.toml
+</span><span>
+</span></code></pre><ul><li><code>json/read_json.rs</code> is the file we’re reading the json data<li><code>json/write_json.rs</code> is the file we’re writing the json data<li><code>main.rs</code> is the file we’ll run the code and understand the json behaviours</ul><h2 id=rust-file-modules>Rust file modules</h2><ul><li>filename: <code>src/main.rs</code></ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>mod json</span><span style=color:#fe8019>;
+</span><span>
+</span><span style=color:#fdf4c1>fn main(</span><span>) {
+</span><span>}
+</span></code></pre><ul><li>filename: <code>src/json/mod.rs</code></ul><pre style=background:#282828;color:#fdf4c1aa><code><span>pub mod read_json;
+</span><span>pub mod write_json; 
+</span></code></pre><h2 id=write-json-in-rust>Write Json in rust</h2><ul><li>filename: <code>src/json/write_json.rs</code></ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>use serde::Serialize</span><span style=color:#fe8019>;
+</span><span>
+</span><span style=font-style:italic;color:#928374>#[derive(Serialize)]
+</span><span style=color:#fdf4c1>pub struct WriteGameLevel {
+</span><span style=color:#fdf4c1>    pub level_desc: String,
+</span><span style=color:#fdf4c1>}
+</span><span>
+</span><span style=font-style:italic;color:#928374>#[derive(Serialize)]
+</span><span style=color:#fdf4c1>pub struct WriteGame {
+</span><span style=color:#fdf4c1>    pub name: String,
+</span><span style=color:#fdf4c1>    pub creator: String,
+</span><span style=color:#fdf4c1>    pub levels: Vec&LTWriteGameLevel>,
+</span><span style=color:#fdf4c1>}
+</span><span>
+</span><span>
+</span><span style=color:#fdf4c1>pub fn write_json(game: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>WriteGame</span><span>) </span><span style=color:#fdf4c1>-</span><span style=color:#fe8019>></span><span style=color:#fdf4c1> String  {
+</span><span style=color:#fdf4c1>    let json = serde_json::to_string(game).unwrap();
+</span><span style=color:#fdf4c1>    json
+</span><span style=color:#fdf4c1>}
+</span></code></pre><p>Let’s import the necessary traits from the <code>serde</code> crate. <code>Serialize</code> is used for serializing Rust structures into JSON data.<p>Rust Structs:<ul><li>Let’s have a Rust struct named <code>WriteGameLevel</code>. It has one field <code>level_desc</code> of type <code>String</code>.<li>We have another Rust struct named <code>WriteGame</code>. With the fields: <code>name</code>, <code>creator</code>, <code>levels</code>.</ul><p>The <code>levels</code> field is of type <code>Vec&LTWriteGameLevel></code>, meaning it’s a vector containing multiple <code>WriteGameLevel</code> structs. Like <code>WriteGameLevel</code>, <code>WriteGame</code> also derives <code>Serialize</code>.<p><code>#</code>[<code>derive(Serialize)</code>] attribute indicates that Rust data structure is converted into a format that can be stored or transmitted, such as JSON, YAML or binary.<p>function <code>write_json(game: &WriteGame)</code> takes reference to <code>WriteGame</code> as parameter and returns <code>String</code>.<p><code>serde_json::to_string(&article)</code> serializes the <code>WriteGame</code> struct into a JSON string. <code>to_string</code> returns a <code>Result&LTString, serde_json::Error></code>, so <code>unwrap()</code> is used to handle any potential errors and extract the resulting JSON string.<p>The resulting JSON string is returned.<h2 id=let-s-run-the-write-json-code>Let’s Run the Write Json code</h2><ul><li>filename: <code>src/main.rs</code></ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>mod json</span><span style=color:#fe8019>;
+</span><span style=color:#fdf4c1>use crate::json::write_json::{
+</span><span style=color:#fdf4c1>    WriteGame, 
+</span><span style=color:#fdf4c1>    WriteGameLevel, 
+</span><span style=color:#fdf4c1>    write_json
+</span><span style=color:#fdf4c1>}</span><span style=color:#fe8019>;
+</span><span>
+</span><span style=color:#fdf4c1>fn stringfy_json(</span><span>) {
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> game</span><span style=color:#fe8019>:</span><span style=color:#fdf4c1> WriteGame </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> WriteGame {
+</span><span>        </span><span style=color:#fdf4c1>name: String::from(</span><span style=color:#b8bb26>"rust game"</span><span>)</span><span style=color:#fdf4c1>,
+</span><span>        </span><span style=color:#fdf4c1>creator: String::from(</span><span style=color:#b8bb26>"samyakt"</span><span>)</span><span style=color:#fdf4c1>,
+</span><span>        </span><span style=color:#fdf4c1>levels: vec![
+</span><span>            </span><span style=color:#fdf4c1>WriteGameLevel {
+</span><span style=color:#fdf4c1>                level_desc: String::from(</span><span style=color:#b8bb26>"basic level"</span><span style=color:#fdf4c1>)
+</span><span style=color:#fdf4c1>            },
+</span><span>            </span><span style=color:#fdf4c1>WriteGameLevel {
+</span><span style=color:#fdf4c1>                level_desc: String::from(</span><span style=color:#b8bb26>"medium level"</span><span style=color:#fdf4c1>)
+</span><span style=color:#fdf4c1>            },
+</span><span>            </span><span style=color:#fdf4c1>WriteGameLevel {
+</span><span style=color:#fdf4c1>                level_desc: String::from(</span><span style=color:#b8bb26>"hard level"</span><span style=color:#fdf4c1>)
+</span><span style=color:#fdf4c1>            }
+</span><span>        </span><span style=color:#fdf4c1>]
+</span><span>    }</span><span style=color:#fe8019>;
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> json </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> write_json(</span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>game);
+</span><span>
+</span><span>    </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"The JSON is: {}"</span><span style=color:#fdf4c1>, json</span><span>)</span><span style=color:#fe8019>;
+</span><span>}
+</span><span>
+</span><span style=color:#fdf4c1>fn main(</span><span>) {
+</span><span>    </span><span style=color:#fdf4c1>// write json
+</span><span>    </span><span style=color:#8ec07c>stringfy_json</span><span>();
+</span><span>}
+</span></code></pre><p>open terminal and run command <code>cargo run</code><p>Output:<pre style=background:#282828;color:#fdf4c1aa><code><span>The JSON is: {"name":"rust game","creator":"samyakt","levels":[{"level_desc":"basic level"},{"level_desc":"medium level"},{"level_desc":"hard level"}]}
+</span></code></pre><p>In the <code>main</code> function <code>stringfy_json()</code> is called, where it contains a <code>WriteGame</code> struct is created with some example data.<p>This struct represents an game with a game name (<code>name</code>), a creator (<code>creator</code>), and a list of game levels (<code>level_desc</code>).<p>The <code>write_json</code> function is called to serialize the Rust struct <code>WriteGame</code> into an JSON string.<h2 id=write-json-in-rust-1>Write Json in rust</h2><ul><li>filename: <code>src/json/read_json.rs</code></ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>use serde::Deserialize</span><span style=color:#fe8019>;
+</span><span>
+</span><span style=font-style:italic;color:#928374>#[derive(Deserialize)]
+</span><span style=color:#fdf4c1>pub struct ReadGameLevel {
+</span><span style=color:#fdf4c1>    pub level_desc: String,
+</span><span style=color:#fdf4c1>}
+</span><span>
+</span><span style=font-style:italic;color:#928374>#[derive(Deserialize)]
+</span><span style=color:#fdf4c1>pub struct ReadGame {
+</span><span style=color:#fdf4c1>    pub name: String,
+</span><span style=color:#fdf4c1>    pub creator: String,
+</span><span style=color:#fdf4c1>    pub levels: Vec&LTReadGameLevel>,
+</span><span style=color:#fdf4c1>}
+</span><span>
+</span><span style=color:#fdf4c1>pub fn read_json_typed(raw_json: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>str</span><span>) </span><span style=color:#fdf4c1>-</span><span style=color:#fe8019>></span><span style=color:#fdf4c1> ReadGame {
+</span><span style=color:#fdf4c1>    let parsed = serde_json::from_str(raw_json).unwrap();
+</span><span style=color:#fdf4c1>    parsed
+</span><span style=color:#fdf4c1>}
+</span></code></pre><p>Let’s import the <code>Deserialize</code> traits from the <code>serde</code> crate. <code>Deserialize</code> is used for deserializing JSON data into Rust structures<p>Rust Structs:<ul><li>Let’s have a Rust struct named <code>ReadGameLevel</code>. It has one field <code>level_desc</code> of type <code>String</code>.<li>We have another Rust struct named <code>ReadGame</code>. With the fields: <code>name</code>, <code>creator</code>, <code>levels</code>.</ul><p>The <code>levels</code> field is of type <code>Vec&LTReadGameLevel></code>, meaning it’s a vector containing multiple <code>ReadGameLevel</code> structs. Like <code>ReadGameLevel</code>, <code>ReadGame</code> also derives <code>Deserialize</code>.<p><code>#</code>[<code>derive(Deserialize)</code>] attribute when you want to create a Rust data structure from a serialized format like JSON, YAML or binary.<p>The <code>read_json_typed</code> function takes a reference to a string <code>(raw_json: &str)</code> as input and returns an <code>ReadGame</code> struct<p>It deserializes the JSON string into an <code>ReadGame</code> struct using <code>serde_json::from_str</code> and any errors encountered during deserialization are unwrapped using <code>unwrap()</code><h2 id=let-s-run-the-read-json-code>Let’s Run the Read Json code</h2><ul><li>filename: <code>src/main.rs</code></ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>mod json</span><span style=color:#fe8019>;
+</span><span style=color:#fdf4c1>use crate::json::read_json::read_json_typed</span><span style=color:#fe8019>;
+</span><span>
+</span><span style=color:#fdf4c1>fn parsed_json(</span><span>) {
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> json </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> r#</span><span style=color:#b8bb26>"
+</span><span style=color:#b8bb26>        {
+</span><span style=color:#b8bb26>            "</span><span style=color:#fdf4c1>name</span><span style=color:#b8bb26>" : "</span><span style=color:#fdf4c1>rust game</span><span style=color:#b8bb26>",
+</span><span style=color:#b8bb26>            "</span><span style=color:#fdf4c1>creator</span><span style=color:#b8bb26>" : "</span><span style=color:#fdf4c1>samyakt</span><span style=color:#b8bb26>",
+</span><span style=color:#b8bb26>            "</span><span style=color:#fdf4c1>levels</span><span style=color:#b8bb26>" : [
+</span><span style=color:#b8bb26>                {
+</span><span style=color:#b8bb26>                    "</span><span style=color:#fdf4c1>level_desc</span><span style=color:#b8bb26>":"</span><span style=color:#fdf4c1>basic level</span><span style=color:#b8bb26>"
+</span><span style=color:#b8bb26>                },
+</span><span style=color:#b8bb26>                {
+</span><span style=color:#b8bb26>                    "</span><span style=color:#fdf4c1>level_desc</span><span style=color:#b8bb26>":"</span><span style=color:#fdf4c1>medium level</span><span style=color:#b8bb26>"
+</span><span style=color:#b8bb26>                },
+</span><span style=color:#b8bb26>                {
+</span><span style=color:#b8bb26>                    "</span><span style=color:#fdf4c1>level_desc</span><span style=color:#b8bb26>":"</span><span style=color:#fdf4c1>hard level</span><span style=color:#b8bb26>"
+</span><span style=color:#b8bb26>                }
+</span><span style=color:#b8bb26>            ]
+</span><span style=color:#b8bb26>        }
+</span><span style=color:#b8bb26>    "</span><span style=color:#fdf4c1>#;
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> parsed </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> read_json_typed(json);
+</span><span>
+</span><span>    </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"Game name is : {}"</span><span style=color:#fdf4c1>, parsed.name</span><span>)</span><span style=color:#fe8019>;
+</span><span>    </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"Game creator name : {}"</span><span style=color:#fdf4c1>, parsed.creator</span><span>)</span><span style=color:#fe8019>;
+</span><span>    </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"The first level : {}"</span><span style=color:#fdf4c1>, parsed.levels</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>0</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>.level_desc</span><span>)</span><span style=color:#fe8019>;
+</span><span>    </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"The third level : {}"</span><span style=color:#fdf4c1>, parsed.levels</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>2</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>.level_desc</span><span>)</span><span style=color:#fe8019>;
+</span><span>}
+</span><span>
+</span><span style=color:#fdf4c1>fn main(</span><span>) {
+</span><span>    </span><span style=color:#fdf4c1>// read json
+</span><span>    </span><span style=color:#8ec07c>parsed_json</span><span>();
+</span><span>
+</span><span>    // stringfy_json(); // comment for now
+</span><span>}
+</span></code></pre><p>open terminal and run command <code>cargo run</code><p>Output:<pre style=background:#282828;color:#fdf4c1aa><code><span>Game name is : rust game
+</span><span>Game creator name : samyakt
+</span><span>The first level : basic level
+</span><span>The third level : hard level
+</span></code></pre><p>In the <code>main</code> function the <code>parsed_json()</code> function is called, a JSON string representing a game is defined. This JSON string includes an game name, creator name, and a list of levels, each containing a different levels.<p>The <code>read_json_typed</code> function is called to deserialize the JSON string into an <code>ReadGame</code> struct.<p>This program essentially demonstrates how to define Rust structs that can be serialized to and deserialized from JSON using the <code>serde</code> crate. It also shows how to use these structs to read and manipulate JSON data.<h2 id=run-both-read-and-write-json-code>Run both read and write json code</h2><ul><li>filename: <code>src/main.rs</code> (full code)</ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>mod json</span><span style=color:#fe8019>;
+</span><span>
+</span><span style=color:#fdf4c1>use crate::json::write_json::{WriteGame, WriteGameLevel, write_json}</span><span style=color:#fe8019>;
+</span><span style=color:#fdf4c1>use crate::json::read_json::read_json_typed</span><span style=color:#fe8019>;
+</span><span>
+</span><span style=color:#fdf4c1>fn parsed_json(</span><span>) {
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> json </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> r#</span><span style=color:#b8bb26>"
+</span><span style=color:#b8bb26>        {
+</span><span style=color:#b8bb26>            "</span><span style=color:#fdf4c1>name</span><span style=color:#b8bb26>" : "</span><span style=color:#fdf4c1>rust game</span><span style=color:#b8bb26>",
+</span><span style=color:#b8bb26>            "</span><span style=color:#fdf4c1>creator</span><span style=color:#b8bb26>" : "</span><span style=color:#fdf4c1>samyakt</span><span style=color:#b8bb26>",
+</span><span style=color:#b8bb26>            "</span><span style=color:#fdf4c1>levels</span><span style=color:#b8bb26>" : [
+</span><span style=color:#b8bb26>                {
+</span><span style=color:#b8bb26>                    "</span><span style=color:#fdf4c1>level_desc</span><span style=color:#b8bb26>":"</span><span style=color:#fdf4c1>basic level</span><span style=color:#b8bb26>"
+</span><span style=color:#b8bb26>                },
+</span><span style=color:#b8bb26>                {
+</span><span style=color:#b8bb26>                    "</span><span style=color:#fdf4c1>level_desc</span><span style=color:#b8bb26>":"</span><span style=color:#fdf4c1>medium level</span><span style=color:#b8bb26>"
+</span><span style=color:#b8bb26>                },
+</span><span style=color:#b8bb26>                {
+</span><span style=color:#b8bb26>                    "</span><span style=color:#fdf4c1>level_desc</span><span style=color:#b8bb26>":"</span><span style=color:#fdf4c1>hard level</span><span style=color:#b8bb26>"
+</span><span style=color:#b8bb26>                }
+</span><span style=color:#b8bb26>            ]
+</span><span style=color:#b8bb26>        }
+</span><span style=color:#b8bb26>    "</span><span style=color:#fdf4c1>#;
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> parsed </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> read_json_typed(json);
+</span><span>
+</span><span>    </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"Game name is : {}"</span><span style=color:#fdf4c1>, parsed.name</span><span>)</span><span style=color:#fe8019>;
+</span><span>    </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"Game creator name : {}"</span><span style=color:#fdf4c1>, parsed.creator</span><span>)</span><span style=color:#fe8019>;
+</span><span>    </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"The first level : {}"</span><span style=color:#fdf4c1>, parsed.levels</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>0</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>.level_desc</span><span>)</span><span style=color:#fe8019>;
+</span><span>    </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"The third level : {}"</span><span style=color:#fdf4c1>, parsed.levels</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>2</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>.level_desc</span><span>)</span><span style=color:#fe8019>;
+</span><span>}
+</span><span>
+</span><span style=color:#fdf4c1>fn stringfy_json(</span><span>) {
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> game</span><span style=color:#fe8019>:</span><span style=color:#fdf4c1> WriteGame </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> WriteGame {
+</span><span>        </span><span style=color:#fdf4c1>name: String::from(</span><span style=color:#b8bb26>"rust game"</span><span>)</span><span style=color:#fdf4c1>,
+</span><span>        </span><span style=color:#fdf4c1>creator: String::from(</span><span style=color:#b8bb26>"samyakt"</span><span>)</span><span style=color:#fdf4c1>,
+</span><span>        </span><span style=color:#fdf4c1>levels: vec![
+</span><span>            </span><span style=color:#fdf4c1>WriteGameLevel {
+</span><span style=color:#fdf4c1>                level_desc: String::from(</span><span style=color:#b8bb26>"basic level"</span><span style=color:#fdf4c1>)
+</span><span style=color:#fdf4c1>            },
+</span><span>            </span><span style=color:#fdf4c1>WriteGameLevel {
+</span><span style=color:#fdf4c1>                level_desc: String::from(</span><span style=color:#b8bb26>"medium level"</span><span style=color:#fdf4c1>)
+</span><span style=color:#fdf4c1>            },
+</span><span>            </span><span style=color:#fdf4c1>WriteGameLevel {
+</span><span style=color:#fdf4c1>                level_desc: String::from(</span><span style=color:#b8bb26>"hard level"</span><span style=color:#fdf4c1>)
+</span><span style=color:#fdf4c1>            }
+</span><span>        </span><span style=color:#fdf4c1>]
+</span><span>    }</span><span style=color:#fe8019>;
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> json </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> write_json(</span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>game);
+</span><span>
+</span><span>    </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"The JSON is: {}"</span><span style=color:#fdf4c1>, json</span><span>)</span><span style=color:#fe8019>;
+</span><span>}
+</span><span>
+</span><span>
+</span><span style=color:#fdf4c1>fn main(</span><span>) {
+</span><span>    </span><span style=color:#fdf4c1>// read json
+</span><span>    </span><span style=color:#8ec07c>parsed_json</span><span>();
+</span><span>
+</span><span>    println!(</span><span style=color:#b8bb26>"\n"</span><span>)</span><span style=color:#fe8019>;
+</span><span>
+</span><span>    </span><span style=color:#fdf4c1>// write json
+</span><span>    </span><span style=color:#8ec07c>stringfy_json</span><span>();
+</span><span>}
+</span></code></pre><p>Let me know what you think! 🦀<p>code src: <a href=https://github.com/isamyakt/rust-json rel=noopener target=_blank>github</a><p class=tagsData><a href=/tags/rust>/rust/</a></main><footer><hr><div class=footContainer><div class=footLeft><p>2024 © Samyakt Patil | <a rel="noopener noreferrer" href=https://github.com/krrishnax target=_blank>Github</a> | <a rel="noopener noreferrer" href=https://x.com/krrishnax target=_blank>Twitter</a> | <a rel="noopener noreferrer" href=https://discordapp.com/users/isamyakt target=_blank>Discord</a> | <a rel="noopener noreferrer" href=http://linkedin.com/in/isamyakt/ target=_blank>Linkedin</a> | <a rel="noopener noreferrer" href=http://t.me/krrishnax target=_blank>Telegram</a> |</div></div></footer></div>

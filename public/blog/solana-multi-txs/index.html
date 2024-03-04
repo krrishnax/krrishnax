@@ -1,0 +1,340 @@
+<!doctype html><html lang=en><head><meta charset=UTF-8><meta content="IE=edge" http-equiv=X-UA-Compatible><meta content="text/html; charset=UTF-8" http-equiv=content-type><meta content="width=device-width,initial-scale=1,user-scalable=no" name=viewport><meta content="index, follow" name=robots><title>Solana: Sending multiple transaction in single blockhash using rust</title><meta content="Solana: Sending multiple transaction in single blockhash using rust" name=title><meta content=Krishna name=author><meta content="Sending multiple transfer intructions (ix) to single transaction (tx) by using `solana-sdk` crate For Client-Side application & `solana-client` for co…" name=description><meta content=website property=og:type><meta content=https://krrishnax.github.io/blog/solana-multi-txs/ property=og:url><meta content=samyakt property=og:site_name><meta content="Solana: Sending multiple transaction in single blockhash using rust" property=og:title><meta content="Sending multiple transfer intructions (ix) to single transaction (tx) by using `solana-sdk` crate For Client-Side application & `solana-client` for co…" property=og:description><meta content=https://krrishnax.github.io/twitter-fire.gif property=og:image><meta content=summary_large_image property=twitter:card><meta content=https://krrishnax.github.io/blog/solana-multi-txs/ property=twitter:url><meta content="Solana: Sending multiple transaction in single blockhash using rust" property=twitter:title><meta content="Sending multiple transfer intructions (ix) to single transaction (tx) by using `solana-sdk` crate For Client-Side application & `solana-client` for co…" property=twitter:description><meta content=https://krrishnax.github.io/twitter-fire.gif property=twitter:image><link href=https://krrishnax.github.io/blog/solana-multi-txs/ rel=canonical><link rel="shortcut icon" href=https://krrishnax.github.io/twitter-fire.gif type=image/x-icon><link href=https://krrishnax.github.io/atom.xml rel=alternate title=RSS type=application/atom+xml><link href=https://krrishnax.github.io/css/style.css rel=stylesheet><script defer src=https://krrishnax.github.io/js/script.js></script><body><div class=wrapper><header><nav class=navBar><a href=/> /home/ </a><a href=/about> /about/ </a><a href=/books> /books/ </a><a href=/blog> /blog/ </a><div class=themeSwitch><button class="themeButton light" onclick="setTheme('light')" title="Light mode"><svg class="icons icons__background"><use href=https://krrishnax.github.io/icons.svg#lightMode></use></svg></button><button class="themeButton dark" onclick="setTheme('dark')" title="Dark mode"><svg class="icons icons__background"><use href=https://krrishnax.github.io/icons.svg#darkMode></use></svg></button></div></nav></header><main><div><a href=..>..</a>/<span class=metaData>solana-multi-txs</span></div><time datetime=2023-09-26>Published on: <span class=metaData>2023-09-26</span></time><address rel=author>By <span class=metaData>Krishna</span></address><h1>Solana: Sending multiple transaction in single blockhash using rust</h1><h2>Table of contents</h2><ul><li><a href=https://krrishnax.github.io/blog/solana-multi-txs/#environment-setup>Environment Setup</a><li><a href=https://krrishnax.github.io/blog/solana-multi-txs/#note>Note:</a><li><a href=https://krrishnax.github.io/blog/solana-multi-txs/#first-thing-first-initialize-keypair>First thing first: Initialize Keypair</a><li><a href=https://krrishnax.github.io/blog/solana-multi-txs/#now-let-s-focus-on-airdrop-and-checking-balance>Now, let’s focus on Airdrop and Checking Balance</a><li><a href=https://krrishnax.github.io/blog/solana-multi-txs/#now-let-s-perform-multiple-transactions>Now, let’s perform multiple Transactions</a><li><a href=https://krrishnax.github.io/blog/solana-multi-txs/#code-explanation>Code Explanation :</a><li><a href=https://krrishnax.github.io/blog/solana-multi-txs/#let-s-add-few-more-transfer-instruction-s>Let’s add Few more transfer instruction’s</a></ul><h2 id=environment-setup>Environment Setup</h2><ul><li><strong>Rust</strong>, You can download rust from their <a href=https://www.rust-lang.org/learn/get-started rel=noopener target=_blank>website</a><li>cargo comes with rust, so you don’t have to worry about it.<li>Initialize the Project</ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>$ cargo new --bin solana-multi-txs
+</span></code></pre><ul><li><strong>solana-sdk</strong> & <strong>solana-client</strong> can be installed via</ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>$ cargo add solana-sdk
+</span><span style=color:#fdf4c1>$ cargo add solana-client
+</span></code></pre><ul><li>install <strong>tokio</strong> for writing asynchronous I/O</ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>$ cargo add tokio -F full
+</span></code></pre><ul><li><strong>dotenvy</strong> for environment variables</ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>$ cargo add dotenvy
+</span></code></pre><p>|| OR ||<ul><li>open <code>Cargo.toml</code> to add dependencies</ul><pre style=background:#282828;color:#fdf4c1aa><code><span>[dependencies]
+</span><span>dotenvy = "0.15.7"
+</span><span>solana-client = "1.18.2"
+</span><span>solana-sdk = "1.18.2"
+</span><span>tokio = { version = "1.36.0", features = ["full"] }
+</span></code></pre><h2 id=note>Note:</h2><ul><li>Before going through this complicated tranasactions understand my previous blog about <a href=../blog/solana-airdrop-tx/>airdrop & transaction</a></ul><h2 id=first-thing-first-initialize-keypair>First thing first: Initialize Keypair</h2><ul><li>filename: <code>src/main.rs</code></ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>use dotenvy::dotenv</span><span style=color:#fe8019>;
+</span><span style=color:#fdf4c1>use std::env</span><span style=color:#fe8019>;
+</span><span style=color:#fdf4c1>use std::fs::{File, OpenOptions}</span><span style=color:#fe8019>;
+</span><span style=color:#fdf4c1>use std::path::Path</span><span style=color:#fe8019>;
+</span><span style=color:#fdf4c1>use std::io::Write</span><span style=color:#fe8019>;
+</span><span>
+</span><span style=color:#fdf4c1>use solana_sdk::signature::Keypair</span><span style=color:#fe8019>;
+</span><span>
+</span><span style=color:#fdf4c1>// region:    --- Keypair
+</span><span>
+</span><span style=color:#fdf4c1>async fn initialize_keypair(</span><span>) </span><span style=color:#fdf4c1>-</span><span style=color:#fe8019>></span><span style=color:#fdf4c1> Keypair {
+</span><span style=color:#fdf4c1>    let file_path = </span><span style=color:#b8bb26>".env"</span><span style=color:#fdf4c1>;
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    // Check if the file exists
+</span><span style=color:#fdf4c1>    let file_exists = Path::new(file_path).exists();
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    if !file_exists {
+</span><span style=color:#fdf4c1>        File::create(file_path).unwrap();
+</span><span style=color:#fdf4c1>    }
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    match env::var(</span><span style=color:#b8bb26>"PRIVATE_KEY"</span><span style=color:#fdf4c1>) {
+</span><span style=color:#fdf4c1>        Ok(_) => {
+</span><span style=color:#fdf4c1>            let env_private_key = env::var(</span><span style=color:#b8bb26>"PRIVATE_KEY"</span><span style=color:#fdf4c1>).unwrap();
+</span><span style=color:#fdf4c1>            let trim_private_key = env_private_key
+</span><span style=color:#fdf4c1>                .trim_matches(|c| c == </span><span style=color:#b8bb26>'['</span><span style=color:#fdf4c1> || c == </span><span style=color:#b8bb26>']'</span><span style=color:#fdf4c1> || c == </span><span style=color:#b8bb26>'"'</span><span style=color:#fdf4c1>);
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>            let vec_private_key: Vec&LTu8> = trim_private_key
+</span><span style=color:#fdf4c1>                .split(</span><span style=color:#b8bb26>","</span><span style=color:#fdf4c1>)
+</span><span style=color:#fdf4c1>                .map(| s| s.trim().parse().unwrap())
+</span><span style=color:#fdf4c1>                .collect();
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>            let bytes_private_key: </span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>u8; 64</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1> = vec_private_key
+</span><span style=color:#fdf4c1>                .try_into()
+</span><span style=color:#fdf4c1>                .expect(</span><span style=color:#b8bb26>"Expected a Vec of length 64"</span><span style=color:#fdf4c1>);
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>            let keypair = Keypair::from_bytes(&bytes_private_key).unwrap();
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>            keypair
+</span><span style=color:#fdf4c1>        },
+</span><span style=color:#fdf4c1>        Err(_) => {
+</span><span style=color:#fdf4c1>            let keypair = Keypair::new();
+</span><span style=color:#fdf4c1>            let keypair_bytes = keypair.to_bytes();
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>            let mut file = OpenOptions::new()
+</span><span style=color:#fdf4c1>                .write(true)
+</span><span style=color:#fdf4c1>                .append(true)
+</span><span style=color:#fdf4c1>                .open(</span><span style=color:#b8bb26>".env"</span><span style=color:#fdf4c1>)
+</span><span style=color:#fdf4c1>                .unwrap();
+</span><span style=color:#fdf4c1>            
+</span><span style=color:#fdf4c1>            writeln</span><span style=color:#fe8019>!</span><span style=color:#fdf4c1>(file, </span><span style=color:#b8bb26>"PRIVATE_KEY=\"{:?}\""</span><span style=color:#fdf4c1>, keypair_bytes).unwrap();
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>            keypair
+</span><span style=color:#fdf4c1>        }
+</span><span style=color:#fdf4c1>    }
+</span><span style=color:#fdf4c1>}
+</span><span>
+</span><span style=color:#fdf4c1>// endregion: --- Keypair
+</span><span>
+</span><span style=font-style:italic;color:#928374>#[tokio::main]
+</span><span style=color:#fdf4c1>async fn main(</span><span>) {
+</span><span>    </span><span style=color:#8ec07c>dotenv</span><span>().ok();
+</span><span>
+</span><span>    let keypair = initialize_keypair().await;
+</span><span>
+</span><span>    println!(</span><span style=color:#b8bb26>"{:?}\n"</span><span style=color:#fdf4c1>, keypair</span><span>)</span><span style=color:#fe8019>;
+</span><span>}
+</span><span>
+</span></code></pre><p>open terminal and run command <code>cargo run</code><p>Output:<pre class=language-bash data-lang=bash style=background:#282828;color:#fdf4c1aa><code class=language-bash data-lang=bash><span style=color:#fdf4c1>Keypair(Keypair { secret: SecretKey: </span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>169, 33, 219, 109, 248, 202, 18, 201, 9, 247, 83, 133, 224, 172, 121, 44, 53, 69, 20, 73, 66, 108, 154, 50, 235, 58, 204, 240, 13, 99, 154, 1</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>, public: PublicKey(CompressedEdwardsY: </span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>173, 83, 149, 245, 30, 168, 154, 80, 60, 159, 234, 145, 233, 45, 223, 139, 134, 180, 5, 20, 213, 124, 35, 163, 250, 94, 225, 83, 119, 214, 70, 61</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>), EdwardsPoint{
+</span><span style=color:#fdf4c1>        X: FieldElement51(</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>569245570616498, 2003359860844829, 2125784894344511, 735460460889380, 912158005314796</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>),
+</span><span style=color:#fdf4c1>        Y: FieldElement51(</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>747800876110765, 1462613865630227, 25091638262967, 2108114127973002, 1077991282392597</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>),
+</span><span style=color:#fdf4c1>        Z: FieldElement51(</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>1, 0, 0, 0, 0</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>),
+</span><span style=color:#fdf4c1>        T: FieldElement51(</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>1301069849558026, 1235770193232742, 738204870145171, 1637446764606588, 1392849794349830</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>)
+</span><span style=color:#fdf4c1>}) }</span><span>)
+</span></code></pre><p>Dependencies used to generate/extract existing keypair<ul><li><code>dotenvy::dotenv</code>: This is a dependency used for loading environment variables from a .env file.<li><code>std::env</code>: This module provides access to environment variables.<li><code>std::fs::{File, OpenOptions}</code>: These modules are used for file operations.<li><code>std::path::Path</code>: This module provides facilities to work with file paths.<li><code>std::io::Write</code>: This trait provides the write method to write bytes to a file.<li><code>solana_sdk::signature::Keypair</code>: This is a type representing a cryptographic key pair used for signing transactions in Solana blockchain.</ul><p><code>initialize_keypair()</code> Function : This asynchronous function initializes a cryptographic key pair. Let’s break it down:<pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>async fn initialize_keypair(</span><span>) </span><span style=color:#fdf4c1>-</span><span style=color:#fe8019>></span><span style=color:#fdf4c1> Keypair {
+</span><span style=color:#fdf4c1>    let file_path = </span><span style=color:#b8bb26>".env"</span><span style=color:#fdf4c1>;
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    // Check if the file exists
+</span><span style=color:#fdf4c1>    let file_exists = Path::new(file_path).exists();
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    if !file_exists {
+</span><span style=color:#fdf4c1>        File::create(file_path).unwrap();
+</span><span style=color:#fdf4c1>    }
+</span></code></pre><ul><li>It initializes the file path where the private key will be stored as <code>.env</code>.<li>Checks if the file exists, and if not, creates an empty file.</ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span>    </span><span style=color:#fdf4c1>match env::var(</span><span style=color:#b8bb26>"PRIVATE_KEY"</span><span>) {
+</span><span>        </span><span style=color:#fdf4c1>Ok(_</span><span>) </span><span style=color:#fe8019>=> </span><span>{
+</span><span>            // Logic for handling existing private key in environment variables
+</span><span>        },
+</span><span>        </span><span style=color:#fdf4c1>Err(_</span><span>) </span><span style=color:#fe8019>=> </span><span>{
+</span><span>            // Logic for generating and saving a new private key
+</span><span>        }
+</span><span>    }
+</span></code></pre><ul><li>It checks if an environment variable named <code>PRIVATE_KEY</code> is set.<li>If the <code>PRIVATE_KEY</code> environment variable is found, it parses the key, constructs a keypair, and returns it.<li>If the <code>PRIVATE_KEY</code> environment variable is not found, it generates a new <code>Keypair</code>, saves it to the <code>.env</code> file, and returns the generated <code>Keypair</code>.</ul><h2 id=now-let-s-focus-on-airdrop-and-checking-balance>Now, let’s focus on Airdrop and Checking Balance</h2><ul><li>filename : <code>src/main.rs</code></ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>use solana_client::rpc_client::RpcClient</span><span style=color:#fe8019>;
+</span><span style=color:#fdf4c1>use solana_sdk::pubkey::Pubkey</span><span style=color:#fe8019>;
+</span><span style=color:#fdf4c1>use solana_sdk::signature::Signature</span><span style=color:#fe8019>;
+</span><span style=color:#fdf4c1>use solana_sdk::native_token::LAMPORTS_PER_SOL</span><span style=color:#fe8019>;
+</span><span style=color:#fdf4c1>use solana_sdk::signer::Signer</span><span style=color:#fe8019>;
+</span><span>
+</span><span style=color:#fdf4c1>// region:    --- Keypair···
+</span><span>
+</span><span style=color:#fdf4c1>// region:    --- Balance
+</span><span>
+</span><span style=color:#fdf4c1>async fn get_balance_in_sol(client: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>RpcClient, pubkey: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>Pubkey</span><span>) </span><span style=color:#fdf4c1>-</span><span style=color:#fe8019>></span><span style=color:#fdf4c1> f64 {
+</span><span style=color:#fdf4c1>    let lamports = LAMPORTS_PER_SOL as f64;
+</span><span style=color:#fdf4c1>    let balance = client.get_balance(&pubkey).unwrap() as f64;
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    balance / lamports
+</span><span style=color:#fdf4c1>}
+</span><span>
+</span><span style=color:#fdf4c1>async fn get_balance_in_lamports(client: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>RpcClient, pubkey: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>Pubkey</span><span>) </span><span style=color:#fdf4c1>-</span><span style=color:#fe8019>></span><span style=color:#fdf4c1> u64 {
+</span><span style=color:#fdf4c1>    let balance = client.get_balance(&pubkey).unwrap();
+</span><span style=color:#fdf4c1>    balance
+</span><span style=color:#fdf4c1>}
+</span><span>
+</span><span style=color:#fdf4c1>// endregion:    --- Balance
+</span><span>
+</span><span style=color:#fdf4c1>// region:    --- Airdrop
+</span><span>
+</span><span style=color:#fdf4c1>async fn airdrop_possible(client: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>RpcClient, pubkey: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>Pubkey</span><span>) </span><span style=color:#fdf4c1>-</span><span style=color:#fe8019>></span><span style=color:#fdf4c1> bool {
+</span><span style=color:#fdf4c1>    let balance = get_balance_in_lamports(client, pubkey).await;
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    let result = </span><span style=color:#fe8019>!</span><span style=color:#fdf4c1>(balance > LAMPORTS_PER_SOL);
+</span><span style=color:#fdf4c1>    result
+</span><span style=color:#fdf4c1>}
+</span><span>
+</span><span style=color:#fdf4c1>async fn airdrop(client: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>RpcClient, pubkey: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>Pubkey</span><span>) </span><span style=color:#fdf4c1>-</span><span style=color:#fe8019>></span><span style=color:#fdf4c1> Option</span><span style=color:#fe8019><</span><span style=color:#fdf4c1>Signature</span><span style=color:#fe8019>> </span><span style=color:#fdf4c1>{
+</span><span style=color:#fdf4c1>    let airdrop_available = airdrop_possible(client, pubkey).await;
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    if airdrop_available  {
+</span><span style=color:#fdf4c1>        let recent_blockhash = client
+</span><span style=color:#fdf4c1>            .get_latest_blockhash()
+</span><span style=color:#fdf4c1>            .unwrap();
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>        let lamports = 1000000000;
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>        let airdrop_sig = client
+</span><span style=color:#fdf4c1>            .request_airdrop_with_blockhash(&pubkey, lamports, &recent_blockhash)
+</span><span style=color:#fdf4c1>            .unwrap();
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>        return Some(airdrop_sig);
+</span><span style=color:#fdf4c1>    } 
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    None
+</span><span style=color:#fdf4c1>} 
+</span><span>
+</span><span style=color:#fdf4c1>// endregion: --- Airdrop
+</span></code></pre><p>Let’s update the <code>main</code> function :<pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=font-style:italic;color:#928374>#[tokio::main]
+</span><span style=color:#fdf4c1>async fn main(</span><span>) {
+</span><span>    </span><span style=color:#8ec07c>dotenv</span><span>().ok();
+</span><span>
+</span><span>    let keypair = initialize_keypair().await;
+</span><span>
+</span><span>    // println!(</span><span style=color:#b8bb26>"{:?}\n"</span><span style=color:#fdf4c1>, keypair</span><span>)</span><span style=color:#fe8019>;
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> public_key </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> keypair.pubkey();
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> url </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> String</span><span style=color:#fe8019>::</span><span style=color:#fdf4c1>from(</span><span style=color:#b8bb26>"https://api.devnet.solana.com"</span><span style=color:#fdf4c1>);
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> client </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> RpcClient</span><span style=color:#fe8019>::</span><span style=color:#fdf4c1>new(url); 
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> airdrop </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> airdrop(</span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>client, </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>public_key).await;
+</span><span>
+</span><span>    </span><span style=color:#fa5c4b>if </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> Some(sig) </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> airdrop {
+</span><span>        </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"airdrop signature : {}\n"</span><span style=color:#fdf4c1>, sig</span><span>)</span><span style=color:#fe8019>;
+</span><span>    }
+</span><span>}
+</span></code></pre><p>open terminal and run command <code>cargo run</code><p>Output:<pre class=language-bash data-lang=bash style=background:#282828;color:#fdf4c1aa><code class=language-bash data-lang=bash><span style=color:#fdf4c1>airdrop signature : 4QejmCBPByoVzKySYHcTDeBVFyox8UjVcWYP9doB3fKiPSXFg5zizamz9Cds88tQbduGTbD5g1GBQJNiwWDH2pVn
+</span></code></pre><p>Dependencies used to get balance and airdrop SOL tokens<ul><li><code>solana_client::rpc_client::RpcClient</code>: This module provides a client for interacting with the Solana RPC (Remote Procedure Call) API.<li><code>solana_sdk::pubkey::Pubkey</code>: This module provides types and utilities for dealing with public keys on the Solana blockchain.<li><code>solana_sdk::signature::Signature</code>: This module provides types and utilities for handling cryptographic signatures.<li><code>solana_sdk::native_token::LAMPORTS_PER_SOL</code>: This constant represents the number of lamports in one SOL (the native token of the Solana blockchain).<li><code>solana_sdk::signer::Signer</code>: This module provides traits for types that can sign messages</ul><p>Balance Functions :<pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>async fn get_balance_in_sol(client: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>RpcClient, pubkey: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>Pubkey</span><span>) </span><span style=color:#fdf4c1>-</span><span style=color:#fe8019>></span><span style=color:#fdf4c1> f64 { ... }
+</span></code></pre><ul><li>This asynchronous function retrieves the balance of an account in SOL and returns it as a floating-point number.</ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>async fn get_balance_in_lamports(client: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>RpcClient, pubkey: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>Pubkey</span><span>) </span><span style=color:#fdf4c1>-</span><span style=color:#fe8019>></span><span style=color:#fdf4c1> u64 { ... }
+</span></code></pre><ul><li>This asynchronous function retrieves the balance of an account in lamports and returns it as a u64 integer.</ul><p>Airdrop Functions :<pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>async fn airdrop_possible(client: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>RpcClient, pubkey: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>Pubkey</span><span>) </span><span style=color:#fdf4c1>-</span><span style=color:#fe8019>></span><span style=color:#fdf4c1> bool { ... }
+</span></code></pre><ul><li>This asynchronous function checks if an airdrop is possible for the given account by comparing its balance with a threshold (here, the value of <code>LAMPORTS_PER_SOL</code>).</ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>async fn airdrop(client: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>RpcClient, pubkey: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>Pubkey</span><span>) </span><span style=color:#fdf4c1>-</span><span style=color:#fe8019>></span><span style=color:#fdf4c1> Option</span><span style=color:#fe8019><</span><span style=color:#fdf4c1>Signature</span><span style=color:#fe8019>> </span><span style=color:#fdf4c1>{ ... }
+</span></code></pre><ul><li>This asynchronous function attempts to initiate an airdrop to the given account if it’s possible (determined by <code>airdrop_possible</code> function).<li>It requests an airdrop of 1 SOL (converted to lamports) to the specified account using the Solana RPC client.<li>If the airdrop is successful, it returns the signature of the transaction; otherwise, it returns <code>None</code></ul><p>Main Function :<pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=font-style:italic;color:#928374>#[tokio::main]
+</span><span style=color:#fdf4c1>async fn main(</span><span>) { </span><span style=color:#fdf4c1>... </span><span>}
+</span></code></pre><ul><li>This is the entry point of the program, marked with <code>#</code>[<code>tokio::main</code>] to indicate asynchronous execution.<li>It loads environment variables, initializes a keypair (which is assumed to be done elsewhere, perhaps as in your previous code), gets the public key, and creates an RPC client for the Solana network.<li>It attempts to perform an airdrop to the account and prints the signature if the airdrop is successful.</ul><h2 id=now-let-s-perform-multiple-transactions>Now, let’s perform multiple Transactions</h2><ul><li>filename: <code>src/main.rs</code></ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>use std::str::FromStr</span><span style=color:#fe8019>;
+</span><span>
+</span><span style=color:#fdf4c1>use solana_sdk::transaction::Transaction</span><span style=color:#fe8019>;
+</span><span style=color:#fdf4c1>use solana_sdk::system_instruction</span><span style=color:#fe8019>;
+</span><span>
+</span><span style=color:#fdf4c1>// region:    --- Mutli-Tx
+</span><span>
+</span><span style=color:#fdf4c1>async fn create_multi_tx_account(
+</span><span>    </span><span style=color:#fdf4c1>client: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>RpcClient,
+</span><span>    </span><span style=color:#fdf4c1>sender: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>Keypair,
+</span><span>    </span><span style=color:#fdf4c1>recievers: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>[</span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>Pubkey],
+</span><span>    </span><span style=color:#fdf4c1>amount: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>[u64],
+</span><span>) </span><span style=color:#fdf4c1>-</span><span style=color:#fe8019>></span><span style=color:#fdf4c1> Option</span><span style=color:#fe8019><</span><span style=color:#fdf4c1>Signature</span><span style=color:#fe8019>> </span><span style=color:#fdf4c1>{
+</span><span style=color:#fdf4c1>    let first_transfer_ix = system_instruction::transfer(
+</span><span style=color:#fdf4c1>        &sender.pubkey(), 
+</span><span style=color:#fdf4c1>        recievers</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>0</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>, 
+</span><span style=color:#fdf4c1>        amount</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>0</span><span style=color:#fa5c4b>]
+</span><span style=color:#fdf4c1>    );
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    let second_transfer_ix = system_instruction::transfer(
+</span><span style=color:#fdf4c1>        &sender.pubkey(), 
+</span><span style=color:#fdf4c1>        recievers</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>1</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>, 
+</span><span style=color:#fdf4c1>        amount</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>1</span><span style=color:#fa5c4b>]
+</span><span style=color:#fdf4c1>    );
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    let third_transfer_ix = system_instruction::transfer(
+</span><span style=color:#fdf4c1>        &sender.pubkey(), 
+</span><span style=color:#fdf4c1>        recievers</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>2</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>, 
+</span><span style=color:#fdf4c1>        amount</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>2</span><span style=color:#fa5c4b>]
+</span><span style=color:#fdf4c1>    );
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    let fourth_transfer_ix = system_instruction::transfer(
+</span><span style=color:#fdf4c1>        &sender.pubkey(), 
+</span><span style=color:#fdf4c1>        recievers</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>3</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>, 
+</span><span style=color:#fdf4c1>        amount</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>3</span><span style=color:#fa5c4b>]
+</span><span style=color:#fdf4c1>    );
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    let recent_blockhash = client.get_latest_blockhash().unwrap();
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    let tx = Transaction::new_signed_with_payer(
+</span><span style=color:#fdf4c1>        &</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>first_transfer_ix, second_transfer_ix, third_transfer_ix, fourth_transfer_ix</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>, 
+</span><span style=color:#fdf4c1>        Some(sender.pubkey()).as_ref(), 
+</span><span style=color:#fdf4c1>        &</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>sender</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>, 
+</span><span style=color:#fdf4c1>        recent_blockhash
+</span><span style=color:#fdf4c1>    );
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    let sig = client.send_and_confirm_transaction(&tx).unwrap();
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    Some(sig)
+</span><span style=color:#fdf4c1>}
+</span><span>
+</span><span style=color:#fdf4c1>async fn multi_tx(client: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>RpcClient, keypair: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>Keypair</span><span>) {
+</span><span>    </span><span style=color:#fdf4c1>// change the public key if you want
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> recievers </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> [
+</span><span>        </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>Pubkey::from_str(</span><span style=color:#b8bb26>"7QnSXgoZHi9FGCwaziaEMsUtmWZUbuvg3qq5UCGVJFat"</span><span>)</span><span style=color:#8ec07c>.unwrap</span><span>(),
+</span><span>        &Pubkey::from_str(</span><span style=color:#b8bb26>"9o7acD8UP8DDKEDZ1LFzuajC7bwG2WZJXRdG1i5FAfD3"</span><span>)</span><span style=color:#8ec07c>.unwrap</span><span>(),
+</span><span>        &Pubkey::from_str(</span><span style=color:#b8bb26>"G2MeMHLr84SbTWVfBj7HSLqPLNQqmR9T8Mkepxi2Ag8V"</span><span>)</span><span style=color:#8ec07c>.unwrap</span><span>(),
+</span><span>        &Pubkey::from_str(</span><span style=color:#b8bb26>"EtGf3KRUT2R21mAPCyZBXb7GFQy1sAeAfwBsHtCeBXP8"</span><span>)</span><span style=color:#8ec07c>.unwrap</span><span>(),
+</span><span>    ];
+</span><span>
+</span><span>    // sending amounts to corresponding to recievers public key
+</span><span>    let amount_lamports: [u64; 4] = [
+</span><span>        1_000_000, 
+</span><span>        2_000_000, 
+</span><span>        3_000_000,
+</span><span>        4_000_000
+</span><span>    ];
+</span><span>
+</span><span>    let multi_tx_sign = create_multi_tx_account(
+</span><span>        </span><span style=color:#fdf4c1>client, 
+</span><span>        </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>keypair, 
+</span><span>        </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>recievers, 
+</span><span>        </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>amount_lamports, 
+</span><span>    )</span><span style=color:#fdf4c1>.await</span><span style=color:#fe8019>;
+</span><span>
+</span><span>    </span><span style=color:#fa5c4b>if </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> Some(sig) </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> multi_tx_sign {
+</span><span>        </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"multi tx : {}\n"</span><span style=color:#fdf4c1>, sig</span><span>)</span><span style=color:#fe8019>;
+</span><span>    }
+</span><span>}
+</span><span>
+</span><span style=color:#fdf4c1>// endregion: --- Mutli-Tx
+</span><span>
+</span><span style=font-style:italic;color:#928374>#[tokio::main]
+</span><span>
+</span><span style=color:#fdf4c1>async fn main(</span><span>) {
+</span><span>    </span><span style=color:#8ec07c>dotenv</span><span>().ok();
+</span><span>
+</span><span>    let keypair = initialize_keypair().await;
+</span><span>
+</span><span>    // println!(</span><span style=color:#b8bb26>"{:?}\n"</span><span style=color:#fdf4c1>, keypair</span><span>)</span><span style=color:#fe8019>;
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> public_key </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> keypair.pubkey();
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> url </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> String</span><span style=color:#fe8019>::</span><span style=color:#fdf4c1>from(</span><span style=color:#b8bb26>"https://api.devnet.solana.com"</span><span style=color:#fdf4c1>);
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> client </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> RpcClient</span><span style=color:#fe8019>::</span><span style=color:#fdf4c1>new(url); 
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> airdrop </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> airdrop(</span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>client, </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>public_key).await;
+</span><span>
+</span><span>    </span><span style=color:#fa5c4b>if </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> Some(sig) </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> airdrop {
+</span><span>        </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"airdrop signature : {}\n"</span><span style=color:#fdf4c1>, sig</span><span>)</span><span style=color:#fe8019>;
+</span><span>    } 
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> balance </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> get_balance_in_sol(</span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>client, </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>public_key).await;
+</span><span>    </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"before balance : {} SOL\n"</span><span style=color:#fdf4c1>, balance</span><span>)</span><span style=color:#fe8019>;
+</span><span>
+</span><span>    </span><span style=color:#fdf4c1>multi_tx(</span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>client, </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>keypair</span><span>)</span><span style=color:#fdf4c1>.await</span><span style=color:#fe8019>;
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> balance </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> get_balance_in_sol(</span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>client, </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>public_key).await;
+</span><span>    </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"after multi-tx balance : {}\n"</span><span style=color:#fdf4c1>, balance</span><span>)</span><span style=color:#fe8019>;
+</span><span>
+</span><span>}
+</span></code></pre><p>open terminal and run command <code>cargo run</code><p>Output:<pre class=language-bash data-lang=bash style=background:#282828;color:#fdf4c1aa><code class=language-bash data-lang=bash><span style=color:#fdf4c1>before balance : 1.983995 SOL
+</span><span>
+</span><span style=color:#fdf4c1>multi tx : 4ofVdWL5aUyNmtbhALf4HKZrdLdGNbHNY1nq63XTdAaGczRHhVJrtShNVaVtuPChYf8ovVpyUK77SXj6Gbgji83v
+</span><span>
+</span><span style=color:#fdf4c1>after multi-tx balance : 1.97399
+</span></code></pre><div><img alt="Solana FM Devnet" src=https://raw.githubusercontent.com/isamyakt/website/72f82d6ebd1569ece7a3ca47210c37a8ffd15b2e/assets/four-txs.png></div><ul><li>checkout: make sure you’re in <a href=https://solana.fm/tx/4ofVdWL5aUyNmtbhALf4HKZrdLdGNbHNY1nq63XTdAaGczRHhVJrtShNVaVtuPChYf8ovVpyUK77SXj6Gbgji83v rel=noopener target=_blank>devnet</a></ul><p>{{< figure src=“https://raw.githubusercontent.com/isamyakt/website/main/assets/four-txs-flow.png” title=“Solana FM Transaction Flow” >}}<h2 id=code-explanation>Code Explanation :</h2><ul><li><code>create_multi_tx_account</code> Function :</ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>async fn create_multi_tx_account(
+</span><span>    </span><span style=color:#fdf4c1>client: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>RpcClient,
+</span><span>    </span><span style=color:#fdf4c1>sender: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>Keypair,
+</span><span>    </span><span style=color:#fdf4c1>receivers: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>[</span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>Pubkey],
+</span><span>    </span><span style=color:#fdf4c1>amount: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>[u64],
+</span><span>) </span><span style=color:#fdf4c1>-</span><span style=color:#fe8019>></span><span style=color:#fdf4c1> Option</span><span style=color:#fe8019><</span><span style=color:#fdf4c1>Signature</span><span style=color:#fe8019>> </span><span style=color:#fdf4c1>{
+</span><span style=color:#fdf4c1>    // Creating multiple transfer instructions for different receivers
+</span><span style=color:#fdf4c1>    // ...
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    // Building a transaction with all transfer instructions
+</span><span style=color:#fdf4c1>    // ...
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    // Sending and confirming the transaction
+</span><span style=color:#fdf4c1>    // ...
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    Some(sig)
+</span><span style=color:#fdf4c1>}
+</span></code></pre><ul><li>This asynchronous function creates and sends a transaction that performs multiple transfers from the sender to different receivers.<li><code>multi_tx</code> Function :</ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>async fn multi_tx(client: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>RpcClient, keypair: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>Keypair</span><span>) {
+</span><span>    </span><span style=color:#fdf4c1>// Define receivers and amounts for each transfer
+</span><span>    </span><span style=color:#fdf4c1>// ...
+</span><span>
+</span><span>    </span><span style=color:#fdf4c1>// Call create_multi_tx_account to create and send the multi-transaction
+</span><span>    </span><span style=color:#fdf4c1>// ...
+</span><span>}
+</span></code></pre><ul><li>This asynchronous function orchestrates the multi-transaction by defining receivers and amounts for each transfer and then calling <code>create_multi_tx_account</code>.</ul><h2 id=let-s-add-few-more-transfer-instruction-s>Let’s add Few more transfer instruction’s</h2><ul><li>in <code>create_multi_tx_account</code> fn, <code>let tx = Transaction::new_signed_with_payer(...)</code> replace with below code</ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> tx </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> Transaction</span><span style=color:#fe8019>::</span><span style=color:#fdf4c1>new_signed_with_payer(
+</span><span style=color:#fdf4c1>        </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>[
+</span><span style=color:#fdf4c1>            first_transfer_ix.clone(), 
+</span><span style=color:#fdf4c1>            second_transfer_ix.clone(), 
+</span><span style=color:#fdf4c1>            third_transfer_ix.clone(), 
+</span><span style=color:#fdf4c1>            fourth_transfer_ix, 
+</span><span style=color:#fdf4c1>            third_transfer_ix, 
+</span><span style=color:#fdf4c1>            second_transfer_ix, 
+</span><span style=color:#fdf4c1>            first_transfer_ix
+</span><span style=color:#fdf4c1>        ], 
+</span><span style=color:#fdf4c1>        Some(sender.pubkey()).as_ref(), 
+</span><span style=color:#fdf4c1>        </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>[sender], 
+</span><span style=color:#fdf4c1>        recent_blockhash
+</span><span style=color:#fdf4c1>    );
+</span></code></pre><ul><li>now, we can added 7 ix in single tx.<li>let’s run the code <code>cargo run</code></ul><p>Output :<pre class=language-bash data-lang=bash style=background:#282828;color:#fdf4c1aa><code class=language-bash data-lang=bash><span style=color:#fdf4c1>before balance : 1.97399 SOL
+</span><span>
+</span><span style=color:#fdf4c1>multi tx : 4KTVSbtrXc9FCiqkW5udvAL84dz3y5SnGWtwZNk9tFnDreJ73scpQ6UFsryvq6hUSqpsm5MJsp9gADEnZNtbDRVr
+</span><span>
+</span><span style=color:#fdf4c1>after multi-tx balance : 1.957985
+</span></code></pre><div><img alt="Solana FM Devnet" src=https://raw.githubusercontent.com/isamyakt/website/main/assets/seven-txs.png></div><ul><li>checkout: make sure you’re in <a href=https://solana.fm/tx/4KTVSbtrXc9FCiqkW5udvAL84dz3y5SnGWtwZNk9tFnDreJ73scpQ6UFsryvq6hUSqpsm5MJsp9gADEnZNtbDRVr rel=noopener target=_blank>devnet</a></ul><p class=tagsData><a href=/tags/rust>/rust/</a> <a href=/tags/solana>/solana/</a></main><footer><hr><div class=footContainer><div class=footLeft><p>2024 © Samyakt Patil | <a rel="noopener noreferrer" href=https://github.com/krrishnax target=_blank>Github</a> | <a rel="noopener noreferrer" href=https://x.com/krrishnax target=_blank>Twitter</a> | <a rel="noopener noreferrer" href=https://discordapp.com/users/isamyakt target=_blank>Discord</a> | <a rel="noopener noreferrer" href=http://linkedin.com/in/isamyakt/ target=_blank>Linkedin</a> | <a rel="noopener noreferrer" href=http://t.me/krrishnax target=_blank>Telegram</a> |</div></div></footer></div>

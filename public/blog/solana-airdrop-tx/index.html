@@ -1,0 +1,272 @@
+<!doctype html><html lang=en><head><meta charset=UTF-8><meta content="IE=edge" http-equiv=X-UA-Compatible><meta content="text/html; charset=UTF-8" http-equiv=content-type><meta content="width=device-width,initial-scale=1,user-scalable=no" name=viewport><meta content="index, follow" name=robots><title>Solana: Airdrops & Transactions using Rust</title><meta content="Solana: Airdrops & Transactions using Rust" name=title><meta content=Krishna name=author><meta content="A minimalist Zola theme that prioritizes clean CSS and avoids heavy JavaScript. Enjoy a seamless user experience with lightning-fast load times. Let y…" name=description><meta content=website property=og:type><meta content=https://krrishnax.github.io/blog/solana-airdrop-tx/ property=og:url><meta content=samyakt property=og:site_name><meta content="Solana: Airdrops & Transactions using Rust" property=og:title><meta content="A minimalist Zola theme that prioritizes clean CSS and avoids heavy JavaScript. Enjoy a seamless user experience with lightning-fast load times. Let y…" property=og:description><meta content=https://krrishnax.github.io/twitter-fire.gif property=og:image><meta content=summary_large_image property=twitter:card><meta content=https://krrishnax.github.io/blog/solana-airdrop-tx/ property=twitter:url><meta content="Solana: Airdrops & Transactions using Rust" property=twitter:title><meta content="A minimalist Zola theme that prioritizes clean CSS and avoids heavy JavaScript. Enjoy a seamless user experience with lightning-fast load times. Let y…" property=twitter:description><meta content=https://krrishnax.github.io/twitter-fire.gif property=twitter:image><link href=https://krrishnax.github.io/blog/solana-airdrop-tx/ rel=canonical><link rel="shortcut icon" href=https://krrishnax.github.io/twitter-fire.gif type=image/x-icon><link href=https://krrishnax.github.io/atom.xml rel=alternate title=RSS type=application/atom+xml><link href=https://krrishnax.github.io/css/style.css rel=stylesheet><script defer src=https://krrishnax.github.io/js/script.js></script><body><div class=wrapper><header><nav class=navBar><a href=/> /home/ </a><a href=/about> /about/ </a><a href=/books> /books/ </a><a href=/blog> /blog/ </a><div class=themeSwitch><button class="themeButton light" onclick="setTheme('light')" title="Light mode"><svg class="icons icons__background"><use href=https://krrishnax.github.io/icons.svg#lightMode></use></svg></button><button class="themeButton dark" onclick="setTheme('dark')" title="Dark mode"><svg class="icons icons__background"><use href=https://krrishnax.github.io/icons.svg#darkMode></use></svg></button></div></nav></header><main><div><a href=..>..</a>/<span class=metaData>solana-airdrop-tx</span></div><time datetime=2023-09-08>Published on: <span class=metaData>2023-09-08</span></time><address rel=author>By <span class=metaData>Krishna</span></address><h1>Solana: Airdrops & Transactions using Rust</h1><h2>Table of contents</h2><ul><li><a href=https://krrishnax.github.io/blog/solana-airdrop-tx/#environment-setup>Environment Setup</a><li><a href=https://krrishnax.github.io/blog/solana-airdrop-tx/#first-thing-is-to-generate-extract-keypair-and-store-in-env-file>First thing is to generate/extract keypair and store in .env file</a><li><a href=https://krrishnax.github.io/blog/solana-airdrop-tx/#check-the-balance-of-pubkey-address-by-rpcclient>Check the balance of Pubkey address by RpcClient</a><li><a href=https://krrishnax.github.io/blog/solana-airdrop-tx/#solana-devnet-airdrops>Solana Devnet Airdrops</a><li><a href=https://krrishnax.github.io/blog/solana-airdrop-tx/#let-s-see-how-can-we-make-transactions-in-solana>Let’s see how can we make Transactions in Solana</a><li><a href=https://krrishnax.github.io/blog/solana-airdrop-tx/#let-s-run-the-code-using-cli-cargo-run>Let’s run the code using cli cargo run</a><li><a href=https://krrishnax.github.io/blog/solana-airdrop-tx/#folder-structure>Folder Structure</a></ul><h2 id=environment-setup>Environment Setup</h2><ul><li><strong>Rust</strong>, You can download rust from their <a href=https://www.rust-lang.org/learn/get-started rel=noopener target=_blank>website</a><li>cargo comes with rust, so you don’t have to worry about it.<li>Initialize the Project</ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>$ cargo new --bin solana-client-rs
+</span></code></pre><ul><li><strong>solana-sdk</strong> & <strong>solana-client</strong> can be installed via<li>To write Client-Side application we’ll use <code>solana-sdk</code> crate & for communication with a solana node over RPC we’ll use <code>solana-client</code></ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>$ cargo add solana-sdk
+</span><span style=color:#fdf4c1>$ cargo add solana-client
+</span></code></pre><ul><li>install <strong>tokio</strong> for writing asynchronous I/O</ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>$ cargo add tokio -F full
+</span></code></pre><ul><li><strong>dotenvy</strong> for environment variables</ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>$ cargo add dotenvy
+</span></code></pre><p>|| OR ||<ul><li>open <code>Cargo.toml</code> to add dependencies</ul><pre style=background:#282828;color:#fdf4c1aa><code><span>[dependencies]
+</span><span>dotenvy = "0.15.7"
+</span><span>solana-client = "1.18.2"
+</span><span>solana-sdk = "1.18.2"
+</span><span>tokio = { version = "1.36.0", features = ["full"] }
+</span></code></pre><h2 id=first-thing-is-to-generate-extract-keypair-and-store-in-env-file>First thing is to generate/extract keypair and store in .env file</h2><ul><li>filename: <code>src/main.rs</code></ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>// region:    --- Crate Modules
+</span><span>
+</span><span style=color:#fdf4c1>use dotenvy::dotenv</span><span style=color:#fe8019>;
+</span><span style=color:#fdf4c1>use solana_sdk::signer::keypair::Keypair</span><span style=color:#fe8019>;
+</span><span style=color:#fdf4c1>use std::path::Path</span><span style=color:#fe8019>;
+</span><span style=color:#fdf4c1>use std::env</span><span style=color:#fe8019>;
+</span><span style=color:#fdf4c1>use std::fs::{File, OpenOptions}</span><span style=color:#fe8019>;
+</span><span style=color:#fdf4c1>use std::io::Write</span><span style=color:#fe8019>;
+</span><span>
+</span><span style=color:#fdf4c1>// endregion: --- Crate Modules
+</span><span>
+</span><span style=color:#fdf4c1>// region:    --- Keypair
+</span><span>
+</span><span style=color:#fdf4c1>async fn initialize_keypair(</span><span>) </span><span style=color:#fdf4c1>-</span><span style=color:#fe8019>></span><span style=color:#fdf4c1> Keypair {
+</span><span style=color:#fdf4c1>    let file_path = </span><span style=color:#b8bb26>".env"</span><span style=color:#fdf4c1>;
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    // Check if the file exists
+</span><span style=color:#fdf4c1>    let file_exists = Path::new(file_path).exists();
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    if !file_exists {
+</span><span style=color:#fdf4c1>        File::create(file_path).unwrap();
+</span><span style=color:#fdf4c1>    }
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    match env::var(</span><span style=color:#b8bb26>"PRIVATE_KEY"</span><span style=color:#fdf4c1>) {
+</span><span style=color:#fdf4c1>        Ok(_) => {
+</span><span style=color:#fdf4c1>            let env_private_key = env::var(</span><span style=color:#b8bb26>"PRIVATE_KEY"</span><span style=color:#fdf4c1>)
+</span><span style=color:#fdf4c1>                .unwrap();
+</span><span style=color:#fdf4c1>            let trim_private_key = env_private_key
+</span><span style=color:#fdf4c1>            .trim_matches(|c| c == </span><span style=color:#b8bb26>'['</span><span style=color:#fdf4c1> || c == </span><span style=color:#b8bb26>']'</span><span style=color:#fdf4c1> || c == </span><span style=color:#b8bb26>'"'</span><span style=color:#fdf4c1>);
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>            let vec_private_key: Vec&LTu8> = trim_private_key
+</span><span style=color:#fdf4c1>                .split(</span><span style=color:#b8bb26>","</span><span style=color:#fdf4c1>)
+</span><span style=color:#fdf4c1>                .map(| s| s.trim().parse().unwrap())
+</span><span style=color:#fdf4c1>                .collect();
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>            let bytes_private: </span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>u8; 64</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1> = vec_private_key
+</span><span style=color:#fdf4c1>                .try_into()
+</span><span style=color:#fdf4c1>                .expect(</span><span style=color:#b8bb26>"Expected a Vec of length 64"</span><span style=color:#fdf4c1>);
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>            let keypair = Keypair::from_bytes(&bytes_private)
+</span><span style=color:#fdf4c1>                .unwrap();
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>            keypair
+</span><span style=color:#fdf4c1>        },
+</span><span style=color:#fdf4c1>        Err(_) => {
+</span><span style=color:#fdf4c1>            let keypair = Keypair::new();
+</span><span style=color:#fdf4c1>            let keypair_bytes = keypair.to_bytes();
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>            let mut file = OpenOptions::new()
+</span><span style=color:#fdf4c1>                .write(true)
+</span><span style=color:#fdf4c1>                .append(true)
+</span><span style=color:#fdf4c1>                .open(</span><span style=color:#b8bb26>".env"</span><span style=color:#fdf4c1>)
+</span><span style=color:#fdf4c1>                .unwrap();
+</span><span style=color:#fdf4c1>            
+</span><span style=color:#fdf4c1>            writeln</span><span style=color:#fe8019>!</span><span style=color:#fdf4c1>(file, </span><span style=color:#b8bb26>"PRIVATE_KEY=\"{:?}\""</span><span style=color:#fdf4c1>, keypair_bytes).unwrap();
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>            keypair
+</span><span style=color:#fdf4c1>        }
+</span><span style=color:#fdf4c1>    }
+</span><span style=color:#fdf4c1>}
+</span><span>
+</span><span style=color:#fdf4c1>// endregion: --- Keypair
+</span><span>
+</span><span style=font-style:italic;color:#928374>#[tokio::main]
+</span><span style=color:#fdf4c1>async fn main(</span><span>) {
+</span><span>    </span><span style=color:#8ec07c>dotenv</span><span>().ok();
+</span><span>
+</span><span>    let keypair = initialize_keypair().await;
+</span><span>
+</span><span>    println!(</span><span style=color:#b8bb26>"{:?}\n"</span><span style=color:#fdf4c1>, keypair</span><span>)</span><span style=color:#fe8019>;
+</span><span>}
+</span></code></pre><ul><li>Imports necessary crates: This includes modules for environment variable management, file handling, and Solana keypair functionality.</ul><p><code>initialize_keypair</code> :<ul><li>This asynchronous function is responsible for initializing a Solana keypair.<li>It first checks if a <code>.env</code> file exists in the current directory. If not, it creates one.<li>It then attempts to read a private key from an environment variable <code>PRIVATE_KEY</code>. If the variable exists, it <code>parses</code> the private key from a string into a <code>byte array</code> and creates a <code>keypair</code> from it.<li>If the <code>PRIVATE_KEY</code> environment variable does not exist, it generates a new <code>keypair</code>, converts it to a <code>byte array</code>, and writes it to the .env file.</ul><h2 id=check-the-balance-of-pubkey-address-by-rpcclient>Check the balance of Pubkey address by RpcClient</h2><ul><li>filename: continue <code>src/main.rs</code></ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>// region:    --- Crate Modules···
+</span><span style=color:#fdf4c1>use solana_sdk::native_token::LAMPORTS_PER_SOL</span><span style=color:#fe8019>;
+</span><span>
+</span><span style=color:#fdf4c1>// region:    --- Keypair···
+</span><span>
+</span><span style=color:#fdf4c1>// region:    --- Balance
+</span><span>
+</span><span style=color:#fdf4c1>pub async fn get_balance_in_sol(client: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>RpcClient, pubkey: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>Pubkey</span><span>) </span><span style=color:#fdf4c1>-</span><span style=color:#fe8019>></span><span style=color:#fdf4c1> f64 {
+</span><span style=color:#fdf4c1>    let lamports = LAMPORTS_PER_SOL as f64;
+</span><span style=color:#fdf4c1>    let balance = client.get_balance(&pubkey).unwrap() as f64;
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    balance / lamports
+</span><span style=color:#fdf4c1>}
+</span><span>
+</span><span style=color:#fdf4c1>pub async fn get_balance_in_lamports(client: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>RpcClient, pubkey: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>Pubkey</span><span>) </span><span style=color:#fdf4c1>-</span><span style=color:#fe8019>></span><span style=color:#fdf4c1> u64 {
+</span><span style=color:#fdf4c1>    let balance = client.get_balance(&pubkey).unwrap();
+</span><span style=color:#fdf4c1>    balance
+</span><span style=color:#fdf4c1>}
+</span><span>
+</span><span style=color:#fdf4c1>// endregion:    --- Balance
+</span></code></pre><p>This code defines two functions related to Solana account balances:<p><code>get_balance_in_sol</code>:<ul><li>Takes an <code>RpcClient</code> and a <code>Pubkey</code> as input.<li>Retrieves the balance of the account associated with the <code>Pubkey</code> using <code>get_balance()</code> method.<li>Converts the balance from lamports to SOL by dividing it by <code>LAMPORTS_PER_SOL</code> (a constant representing the number of lamports per SOL).<li>Returns the balance as a <code>f64</code>- (floating-point number).</ul><p><code>get_balance_in_lamports</code>:<ul><li>This also takes an <code>RpcClient</code> and a <code>Pubkey</code> as input.<li>Retrieves the balance of the account associated with the <code>Pubkey</code> using <code>get_balance()</code> method.<li>Returns the balance directly as a <code>u64</code> (unsigned 64-bit integer), without conversion.</ul><h2 id=solana-devnet-airdrops>Solana Devnet Airdrops</h2><ul><li>filename : continue <code>src/main.rs</code></ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>// region:    --- Crate Modules···
+</span><span>
+</span><span style=color:#fdf4c1>use solana_sdk::signature::Signature</span><span style=color:#fe8019>;
+</span><span style=color:#fdf4c1>use solana_sdk::signer::Signer</span><span style=color:#fe8019>;
+</span><span>
+</span><span style=color:#fdf4c1>// region:    --- Keypair···
+</span><span>
+</span><span style=color:#fdf4c1>// region:    --- Balance···
+</span><span>
+</span><span style=color:#fdf4c1>// region:    --- Airdrop
+</span><span>
+</span><span style=color:#fdf4c1>pub async fn airdrop_possible(client: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>RpcClient, pubkey: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>Pubkey</span><span>) </span><span style=color:#fdf4c1>-</span><span style=color:#fe8019>></span><span style=color:#fdf4c1> bool {
+</span><span style=color:#fdf4c1>    let balance = get_balance_in_lamports(client, pubkey).await;
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    let result = </span><span style=color:#fe8019>!</span><span style=color:#fdf4c1>(balance > LAMPORTS_PER_SOL);
+</span><span style=color:#fdf4c1>    result
+</span><span style=color:#fdf4c1>}
+</span><span>
+</span><span style=color:#fdf4c1>pub async fn airdrop(client: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>RpcClient, pubkey: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>Pubkey</span><span>) </span><span style=color:#fdf4c1>-</span><span style=color:#fe8019>></span><span style=color:#fdf4c1> Option</span><span style=color:#fe8019><</span><span style=color:#fdf4c1>Signature</span><span style=color:#fe8019>> </span><span style=color:#fdf4c1>{
+</span><span style=color:#fdf4c1>    let airdrop_available = airdrop_possible(client, pubkey).await;
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    if airdrop_available  {
+</span><span style=color:#fdf4c1>        let recent_blockhash = client
+</span><span style=color:#fdf4c1>            .get_latest_blockhash()
+</span><span style=color:#fdf4c1>            .unwrap();
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>        let lamports = 1000000000;
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>        let airdrop_sig = client
+</span><span style=color:#fdf4c1>            .request_airdrop_with_blockhash(&pubkey, lamports, &recent_blockhash)
+</span><span style=color:#fdf4c1>            .unwrap();
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>        return Some(airdrop_sig);
+</span><span style=color:#fdf4c1>    } 
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    None
+</span><span style=color:#fdf4c1>} 
+</span><span>
+</span><span style=color:#fdf4c1>// endregion: --- Airdrop
+</span><span>
+</span><span style=font-style:italic;color:#928374>#[tokio::main]
+</span><span style=color:#fdf4c1>async fn main(</span><span>) {
+</span><span>    </span><span style=color:#8ec07c>dotenv</span><span>().ok();
+</span><span>
+</span><span>    let keypair = initialize_keypair().await;
+</span><span>
+</span><span>    println!(</span><span style=color:#b8bb26>"{:?}\n"</span><span style=color:#fdf4c1>, keypair</span><span>)</span><span style=color:#fe8019>;
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> public_key </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> keypair.pubkey();
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> url </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> String</span><span style=color:#fe8019>::</span><span style=color:#fdf4c1>from(</span><span style=color:#b8bb26>"https://api.devnet.solana.com"</span><span style=color:#fdf4c1>);
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> client </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> RpcClient</span><span style=color:#fe8019>::</span><span style=color:#fdf4c1>new(url); 
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> airdrop </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> airdrop(</span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>client, </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>public_key).await;
+</span><span>
+</span><span>    </span><span style=color:#fa5c4b>if </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> Some(sig) </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> airdrop {
+</span><span>        </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"airdrop signature : {}\n"</span><span style=color:#fdf4c1>, sig</span><span>)</span><span style=color:#fe8019>;
+</span><span>    } 
+</span><span>    </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"airdrop failed : becoz your balance is more then 1 SOL\n"</span><span>)</span><span style=color:#fe8019>;
+</span><span>
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> balance </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> get_balance_in_sol(</span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>client, </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>public_key).await;
+</span><span>
+</span><span>    </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"before balance : {} SOL\n"</span><span style=color:#fdf4c1>, balance</span><span>)</span><span style=color:#fe8019>;
+</span><span>}
+</span></code></pre><p>implemented two functions for solana airdrops:<p><code>airdrop_possible</code>:<ul><li>Takes an <code>RpcClient</code> and a <code>Pubkey</code> as input.<li>Retrieves the balance using <code>get_balance_in_lamports</code> async function.<li>Checks if the balance is less than 1 SOL (LAMPORTS_PER_SOL).<li>Returns true if eligible for an airdrop (balance < 1 SOL), false otherwise.</ul><p><code>airdrop</code>:<ul><li>Takes an <code>RpcClient</code> and a <code>Pubkey</code> as input.<li>Calls <code>airdrop_possible</code> to check eligibility.<li>If eligible, retrieves the latest blockhash and requests an airdrop for 1 SOL.<li>Returns the <code>Signature</code> of the airdrop transaction (if successful), otherwise <code>None</code>.</ul><h2 id=let-s-see-how-can-we-make-transactions-in-solana>Let’s see how can we make Transactions in Solana</h2><ul><li>filename: continue <code>src/main.rs</code></ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=color:#fdf4c1>// region:    --- Crate Modules···
+</span><span>
+</span><span style=color:#fdf4c1>use solana_sdk::system_instruction</span><span style=color:#fe8019>;
+</span><span style=color:#fdf4c1>use solana_sdk::transaction::Transaction</span><span style=color:#fe8019>;
+</span><span style=color:#fdf4c1>use std::str::FromStr</span><span style=color:#fe8019>;
+</span><span>
+</span><span style=color:#fdf4c1>// region:    --- Keypair···
+</span><span>
+</span><span style=color:#fdf4c1>// region:    --- Balance···
+</span><span>
+</span><span style=color:#fdf4c1>// region:    --- Airdrop···
+</span><span>
+</span><span style=color:#fdf4c1>// region:    --- Transaction
+</span><span>
+</span><span style=color:#fdf4c1>pub async fn create_transfer_account(
+</span><span>    </span><span style=color:#fdf4c1>client: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>RpcClient,
+</span><span>    </span><span style=color:#fdf4c1>sender: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>Keypair,
+</span><span>    </span><span style=color:#fdf4c1>reciever: </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>Pubkey,
+</span><span>    </span><span style=color:#fdf4c1>amount: u64
+</span><span>) </span><span style=color:#fdf4c1>-</span><span style=color:#fe8019>></span><span style=color:#fdf4c1> Option</span><span style=color:#fe8019><</span><span style=color:#fdf4c1>Signature</span><span style=color:#fe8019>> </span><span style=color:#fdf4c1>{
+</span><span style=color:#fdf4c1>    let instr = system_instruction::transfer(
+</span><span style=color:#fdf4c1>        &sender.pubkey(),
+</span><span style=color:#fdf4c1>        &reciever,
+</span><span style=color:#fdf4c1>        amount,
+</span><span style=color:#fdf4c1>    );
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    let recent_blockhash = client.get_latest_blockhash().unwrap();
+</span><span style=color:#fdf4c1>    
+</span><span style=color:#fdf4c1>    let transaction = Transaction::new_signed_with_payer(
+</span><span style=color:#fdf4c1>        &</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>instr</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>, 
+</span><span style=color:#fdf4c1>        Some(sender.pubkey()).as_ref(), 
+</span><span style=color:#fdf4c1>        &</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>sender</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>, 
+</span><span style=color:#fdf4c1>        recent_blockhash
+</span><span style=color:#fdf4c1>    );
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    let sig = client.send_and_confirm_transaction(&transaction).unwrap();
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>    Some(sig)
+</span><span style=color:#fdf4c1>
+</span><span style=color:#fdf4c1>}
+</span><span>
+</span><span style=color:#fdf4c1>// endregion: --- Transaction
+</span></code></pre><p>Initiates a Solana transaction to transfer SOL funds from a sender account to a receiver account.<p><code>create_transfer_account</code> takes four arguments:<ul><li>client : An <code>RpcClient</code> object used to interact with the Solana node.<li>sender : A <code>Keypair</code> object representing the sender’s Solana account.<li>receiver : A <code>Pubkey</code> object representing the receiver’s Solana account.<li>amount : The amount of SOL to transfer, represented as a <code>u64</code> integer.</ul><ol><li>Create transfer instruction:</ol><ul><li>Uses <code>system_instruction::transfer</code> to create a Solana instruction object representing the transfer operation.<li>This object specifies the sender’s public key, receiver’s public key, and the transfer amount.</ul><ol start=2><li>Get latest blockhash:</ol><ul><li>Retrieves the most recent blockhash from the Solana node using <code>client.get_latest_blockhash()</code>.<li>The blockhash is used for transaction signing and ensures the transaction is valid for the current network state.</ul><ol start=3><li>Create and sign transaction:</ol><ul><li>Constructs a new <code>Transaction</code> object with the created transfer instruction.<li>Uses <code>Transaction::new_signed_with_payer</code> to sign the transaction with the sender’s private key and set the fee payer to the sender’s public key.</ul><ol start=4><li>Send and confirm transaction:</ol><ul><li>Submits the signed transaction to the Solana node using <code>client.send_and_confirm_transaction()</code>.<li>This method waits for the transaction to be processed and included in a block on the blockchain.</ul><ol start=5><li>Return signature:</ol><ul><li>If successful, returns the transaction signature (a unique identifier for the transaction) as a <code>Signature</code>. Otherwise, returns <code>None</code>.</ul><h2 id=let-s-run-the-code-using-cli-cargo-run>Let’s run the code using cli <code>cargo run</code></h2><ul><li>filename: <code>src/main.rs</code></ul><pre class=language-zsh data-lang=zsh style=background:#282828;color:#fdf4c1aa><code class=language-zsh data-lang=zsh><span style=font-style:italic;color:#928374>#[tokio::main]
+</span><span style=color:#fdf4c1>async fn main(</span><span>) {
+</span><span>    </span><span style=color:#8ec07c>dotenv</span><span>().ok();
+</span><span>
+</span><span>    let keypair = initialize_keypair().await;
+</span><span>
+</span><span>    println!(</span><span style=color:#b8bb26>"{:?}\n"</span><span style=color:#fdf4c1>, keypair</span><span>)</span><span style=color:#fe8019>;
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> public_key </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> keypair.pubkey();
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> url </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> String</span><span style=color:#fe8019>::</span><span style=color:#fdf4c1>from(</span><span style=color:#b8bb26>"https://api.devnet.solana.com"</span><span style=color:#fdf4c1>);
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> client </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> RpcClient</span><span style=color:#fe8019>::</span><span style=color:#fdf4c1>new(url); 
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> airdrop </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> airdrop(</span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>client, </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>public_key).await;
+</span><span>
+</span><span>    </span><span style=color:#fa5c4b>if </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> Some(sig) </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> airdrop {
+</span><span>        </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"airdrop signature : {}\n"</span><span style=color:#fdf4c1>, sig</span><span>)</span><span style=color:#fe8019>;
+</span><span>    } 
+</span><span>    </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"airdrop failed : becoz your balance is more then 1 SOL\n"</span><span>)</span><span style=color:#fe8019>;
+</span><span>
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> balance </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> get_balance_in_sol(</span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>client, </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>public_key).await;
+</span><span>
+</span><span>    </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"before balance : {} SOL\n"</span><span style=color:#fdf4c1>, balance</span><span>)</span><span style=color:#fe8019>;
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> reciever </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> Pubkey</span><span style=color:#fe8019>::</span><span style=color:#fdf4c1>from_str(</span><span style=color:#b8bb26>"Fudp7uPDYNYQRxoq1Q4JiwJnzyxhVz37bGqRki3PBzS"</span><span style=color:#fdf4c1>).unwrap();
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> transfer_lamports </span><span style=color:#fe8019>= </span><span style=color:#d3869b>10000000</span><span style=color:#fdf4c1>; </span><span style=color:#fe8019>// </span><span style=color:#d3869b>0</span><span style=color:#fdf4c1>.</span><span style=color:#d3869b>01</span><span style=color:#fdf4c1> SOL
+</span><span>
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> tx </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> create_transfer_account(</span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>client, </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>keypair, </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>reciever, transfer_lamports).await;
+</span><span>
+</span><span>    </span><span style=color:#fa5c4b>if </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> Some(sig) </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> tx {
+</span><span>        </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"tx : {}\n"</span><span style=color:#fdf4c1>, sig</span><span>)</span><span style=color:#fe8019>;
+</span><span>    } 
+</span><span>
+</span><span>    </span><span style=color:#fabd2f>let</span><span style=color:#fdf4c1> balance </span><span style=color:#fe8019>=</span><span style=color:#fdf4c1> get_balance_in_sol(</span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>client, </span><span style=color:#fe8019>&</span><span style=color:#fdf4c1>public_key).await;
+</span><span>
+</span><span>    </span><span style=color:#fdf4c1>println!(</span><span style=color:#b8bb26>"after balance : {}\n"</span><span style=color:#fdf4c1>, balance</span><span>)</span><span style=color:#fe8019>;
+</span><span>}
+</span></code></pre><p>Output :<pre class=language-sh data-lang=sh style=background:#282828;color:#fdf4c1aa><code class=language-sh data-lang=sh><span style=color:#fdf4c1>Keypair(Keypair { secret: SecretKey: </span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>38, 196, 247, 2, 108, 189, 145, 71, 90, 34, 243, 23, 97, 67, 76, 27, 238, 127, 81, 223, 63, 169, 243, 31, 96, 234, 73, 146, 222, 98, 165, 111</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>, public: PublicKey(CompressedEdwardsY: </span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>125, 210, 157, 111, 216, 68, 183, 45, 14, 241, 150, 186, 109, 50, 10, 244, 180, 219, 137, 210, 176, 243, 218, 17, 117, 120, 48, 227, 188, 158, 235, 159</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>), EdwardsPoint{
+</span><span style=color:#fdf4c1>        X: FieldElement51(</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>1728613258012327, 343252765223047, 425545071446415, 960337167879222, 623386839219603</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>),
+</span><span style=color:#fdf4c1>        Y: FieldElement51(</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>2046021213213309, 1608941425509814, 606306906941641, 1190259680991337, 561549455274759</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>),
+</span><span style=color:#fdf4c1>        Z: FieldElement51(</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>1, 0, 0, 0, 0</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>),
+</span><span style=color:#fdf4c1>        T: FieldElement51(</span><span style=color:#fa5c4b>[</span><span style=color:#fdf4c1>275103477731411, 1733262979526940, 388164583281727, 1881120732385144, 2057187608693722</span><span style=color:#fa5c4b>]</span><span style=color:#fdf4c1>)
+</span><span style=color:#fdf4c1>}) }</span><span>)
+</span><span>
+</span><span style=color:#fdf4c1>airdrop failed : becoz your balance is more then 1 SOL
+</span><span>
+</span><span style=color:#fdf4c1>before balance : 1.969455 SOL
+</span><span>
+</span><span style=color:#fdf4c1>tx : 2dgbRbiAp17JRhssGDE8tZvJ1GMvfgMZGyR5mgAQMdjjzwbLBUvyYggPo3DArQwUZL2wEgh7XhELZhrMLLaNZ7m6
+</span><span>
+</span><span style=color:#fdf4c1>after balance : 1.95945
+</span></code></pre><p>checkout the tx in solana explorer <a href="https://explorer.solana.com/tx/2dgbRbiAp17JRhssGDE8tZvJ1GMvfgMZGyR5mgAQMdjjzwbLBUvyYggPo3DArQwUZL2wEgh7XhELZhrMLLaNZ7m6?cluster=devnet" rel=noopener target=_blank>devnet</a><p>Remember, don’t share your SecretKey with anyone<h2 id=folder-structure>Folder Structure</h2><ul><li>If you are interested in folder structure<li>checkout src:<a href=https://github.com/isamyakt/solana-client-rs rel=noopener target=_blank>github</a></ul><pre style=background:#282828;color:#fdf4c1aa><code><span>.
+</span><span>├── src
+</span><span>│   ├── main.rs
+</span><span>│   ├── keypair.rs
+</span><span>│   ├── balance.rs
+</span><span>│   ├── airdrop.rs
+</span><span>│   └── transaction.rs
+</span><span>├── .gitignore
+</span><span>├── Cargo.lock
+</span><span>└── Cargo.toml
+</span></code></pre><p class=tagsData><a href=/tags/rust>/rust/</a> <a href=/tags/solana>/solana/</a></main><footer><hr><div class=footContainer><div class=footLeft><p>2024 © Samyakt Patil | <a rel="noopener noreferrer" href=https://github.com/krrishnax target=_blank>Github</a> | <a rel="noopener noreferrer" href=https://x.com/krrishnax target=_blank>Twitter</a> | <a rel="noopener noreferrer" href=https://discordapp.com/users/isamyakt target=_blank>Discord</a> | <a rel="noopener noreferrer" href=http://linkedin.com/in/isamyakt/ target=_blank>Linkedin</a> | <a rel="noopener noreferrer" href=http://t.me/krrishnax target=_blank>Telegram</a> |</div></div></footer></div>
